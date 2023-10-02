@@ -16,9 +16,10 @@ Check points in the analysis:-
 
 After the analysis, I am able to answer the business questions with the observed trends and patterns.
 
-I also combined my findings with an outer source, for the stakeholders as reference.
+I also combined my findings with an outer source, for the stakeholders reference.
 
 < End >
 
 Thank you for your interest to my Bellabeat Case Study!
+
 This is my first time using R. Feel free to give me any comments and recommendations for improvement!
