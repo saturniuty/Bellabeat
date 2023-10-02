@@ -1,0 +1,381 @@
+---
+title: "CaseStudy_Bellabeat"
+author: "Saturn.I"
+date: "2023-10-01"
+output: html_document
+---
+<br>
+
+#### Background
+*Bellabeat*, a high-tech manufacturer of health-focused products for women. *Bellabeat* is a successful small company, but they have the potential to become a larger player in the global smart device market. Urška Sršen, co-founder and Chief Creative Officer of *Bellabeat*, believes that analyzing smart device fitness data could help unlock new growth opportunities for the company.
+
+<br>
+
+#### Questions for the analysis
+* What are some trends in smart device usage?
+* How could these trends apply to *Bellabeat* customers?
+* How could these trends help influence *Bellabeat* marketing strategy?
+
+<br>
+
+#### Business task
+Generate ideas for *Bellabeat*'s products and marketing strategy.
+
+<br>
+
+##### Load packages
+```{r}
+library(tidyverse)
+library(skimr)
+library(ggplot2)
+
+```
+
+##### Import dataset
+```{r}
+hourly_calories <- read.csv('../Case Study 2/Fitabase Data 4.12.16-5.12.16/1_hourlyCalories_merged.csv')
+hourly_intensity <- read.csv('../Case Study 2/Fitabase Data 4.12.16-5.12.16/1_hourlyIntensities_merged.csv')
+hourly_steps <- read.csv('../Case Study 2/Fitabase Data 4.12.16-5.12.16/1_hourlySteps_merged.csv')
+
+daily_activity <- read.csv('../Case Study 2/Fitabase Data 4.12.16-5.12.16/2_dailyActivity_merged.csv')
+daily_weight <- read.csv('../Case Study 2/Fitabase Data 4.12.16-5.12.16/2_weightLogInfo_merged.csv')
+daily_sleep <- read.csv('../Case Study 2/Fitabase Data 4.12.16-5.12.16/2_sleepDay_merged.csv')
+
+```
+
+##### Check datasets
+Both weight and sleep data sets are not completed, so they are not further analyzed.
+
+```{r}
+hourly_calories %>% 
+  group_by(Id) %>% 
+  summarise(total_entries = n())
+
+hourly_intensity %>% 
+  group_by(Id) %>% 
+  summarise(total_entries = n())
+
+hourly_steps %>% 
+  group_by(Id) %>% 
+  summarise(total_entries = n())
+
+
+daily_activity %>% 
+  group_by(Id) %>% 
+  summarise(total_entries = n())
+
+daily_weight %>% 
+  group_by(Id) %>% 
+  summarise(total_entries = n())
+
+daily_sleep %>% 
+  group_by(Id) %>% 
+  summarise(total_entries = n())
+
+```
+
+##### Compare hourly and daily records
+Data discrepancies were found, the hourly records and daily records are not sync.
+
+```{r}
+hourly_calories %>% 
+  group_by(Id) %>% 
+  summarise(total_calories = sum(Calories)) %>% 
+  summarise(calorie = sum(total_calories))
+
+hourly_steps %>% 
+  group_by(Id) %>% 
+  summarise(total_step = sum(StepTotal)) %>% 
+  summarise(steps = sum(total_step))
+
+daily_activity %>% 
+  group_by(Id) %>% 
+  summarise(total_calories = sum(Calories), total_step = sum(TotalSteps)) %>% 
+  summarise(calorie = sum(total_calories), steps = sum(total_step))
+
+```
+
+##### Combine 3 tables
+```{r}
+hourly_combine <- inner_join(hourly_steps, 
+                             inner_join(hourly_calories, hourly_intensity, by = c('Id' = 'Id', 'ActivityHour' = 'ActivityHour')), 
+                             by = c('Id' = 'Id', 'ActivityHour' = 'ActivityHour'))
+
+```
+
+##### Reformatting the data
+```{r}
+hourly_combine_2 <- hourly_combine %>% 
+  mutate(id = as.character(Id),
+         new_active_dtm = as.POSIXct(ActivityHour, format='%m/%d/%Y %I:%M:%S %p'), 
+         new_active_date = ymd(as.POSIXct(ActivityHour, format = '%m/%d/%Y')),
+         time = str_sub(new_active_dtm, -8, -7),
+         .after = Id) %>% 
+  select(id, new_active_dtm, new_active_date, time, StepTotal, Calories, TotalIntensity)
+
+hourly_table <- hourly_combine_2 %>% 
+  mutate(new_active_time = as.integer(hourly_combine_2$time),
+         time_period = format(new_active_dtm, '%H:%M:%S'), .before = time) %>% 
+  select(id, new_active_dtm, new_active_date, new_active_time, time_period, 
+         total_steps = StepTotal, total_intensity = TotalIntensity, calories = Calories)
+
+
+daily_table <- daily_activity %>% 
+  mutate(id = as.character(Id), 
+         new_active_date = as.POSIXct(ActivityDate, format = '%m/%d/%Y'),
+         activity_minutes = VeryActiveMinutes+FairlyActiveMinutes+LightlyActiveMinutes) %>% 
+  select(id, new_active_date, SedentaryMinutes, TotalSteps, TotalDistance, activity_minutes, Calories)
+
+```
+
+##### Descriptive Summary
+The median of the daily walk is 7405.5 that is less than the suggest guidelines about 10,000 steps per day per adults. Source here [link](https://www.medicalnewstoday.com/articles/325323#takeaway)
+
+The maximum sedentary time (1440) is almost triple to the maximum activity time (552).
+
+```{r}
+skim_without_charts(hourly_table)
+skim_without_charts(daily_table)
+
+```
+
+##### Univariate Analysis
+The hourly records are much skewed than the daily records.
+
+```{r}
+plot(density(hourly_table$total_intensity))
+plot(density(hourly_table$total_steps))
+plot(density(hourly_table$calories))
+
+plot(density(daily_table$TotalSteps))
+plot(density(daily_table$TotalDistance))
+plot(density(daily_table$activity_minutes))
+plot(density(daily_table$SedentaryMinutes))
+plot(density(daily_table$Calories))
+
+```
+
+##### Binvariate Analysis
+In the hourly_table, three of the factors are positively correlated.
+
+On the other hand, Step, Distance, activity_minute and Calories are also positively correlated in the daily_table.
+
+```{r}
+pairs(hourly_table[, c("total_intensity", "total_steps", "calories")])
+pairs(daily_table[, c("TotalSteps", "TotalDistance", "activity_minutes", 'SedentaryMinutes', 'Calories')])
+
+```
+
+##### hourly_table Plots
+More steps more calories burned.
+
+Higher intensity has more calories burned.
+
+At first more steps lead to higher intensity, then the growth of intensity is slowed down.
+
+```{r}
+hourly_table %>%
+  ggplot(aes(total_steps, calories)) +
+  theme_bw() +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(title = 'Steps vs Calories',
+       x = 'Total Steps', y = 'Total Calories')
+
+hourly_table %>%
+  ggplot(aes(total_intensity, calories)) +
+  theme_bw() +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(title = 'Intensity vs Calories',
+       x = 'Total Intensity', y = 'Total Calories')
+
+hourly_table %>%
+  ggplot(aes(total_steps, total_intensity)) +
+  theme_bw() +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(title = 'Steps vs Intensity',
+       x = 'Total Steps', y = 'Total Intensity')
+
+```
+
+##### daily_table Plot
+Steps and Distance probably in a linear relationship.
+
+More active time has more calories burned.
+
+On the contrary, less calories burned if the sedentary time is getting longer.
+
+```{r}
+daily_table %>% 
+  ggplot(aes(TotalSteps, TotalDistance)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(title = 'Steps vs Distance',
+       x = 'Total Steps', y = 'Total Distance')
+
+daily_table %>% 
+  ggplot(aes(activity_minutes, Calories)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(title = 'Active Minutes vs Calories',
+       x = 'Active Minutes', y = 'Total Calories')
+
+daily_table %>% 
+  ggplot(aes(SedentaryMinutes, Calories)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(title = 'Non Active Minutes vs Calories',
+       x = 'Sedentary Minutes', y = 'Total Calories')
+
+```
+
+##### Further check the period with most steps
+Active period for most people: 7am to 9pm.
+
+Highly active period: 2pm to 5pm.
+```{r}
+hourly_table %>% 
+  group_by(time_period) %>% 
+  ggplot(aes(time_period, total_steps)) +
+  theme_bw() +
+  geom_hex() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = 'Total Steps in Hours',
+       x = 'Time in Hours', y = 'Total Steps')
+
+hourly_table %>% 
+  filter(total_steps >= 6000) %>%
+  distinct(time_period) %>% 
+  summarise(start_time = min(time_period), end_time = max(time_period))
+
+hourly_table %>% 
+  filter(total_steps >= 9000) %>%
+  distinct(time_period) %>% 
+  summarise(start_time = min(time_period), end_time = max(time_period))
+
+```
+
+The active period records a higher intensity, and higher intensity has more calories burned.
+```{r}
+hourly_table %>% 
+  ggplot(aes(new_active_time, total_intensity)) +
+  theme_bw() +
+  geom_raster(aes(fill = calories)) +
+  scale_fill_gradient(low = 'white', high = 'blue') +
+  xlim(0, 24) + ylim(0, 180) +
+  labs(x = 'Time in Hours', y = 'Total Intensity',
+       title = 'Intensity and Calories across time')
+
+```
+
+Though Steps have a positive correlated to calories, its effect is less strong compared to the factor of intensity.
+```{r}
+hourly_table %>% 
+  ggplot(aes(new_active_time, total_steps)) +
+  theme_bw() +
+  geom_raster(aes(fill = calories)) +
+  scale_fill_gradient(low = 'white', high = 'blue') +
+  xlim(0, 24) + ylim(0, 180) +
+  labs(x = 'Time 00-24', y = 'Total Steps',
+       title = 'Steps and Calories across time')
+
+```
+
+I try to dive deeper into the the relationships between steps, intensity and calories.
+
+They are positively correlated, but not sure to be in a linear relationship, so the numbers are only for reference.
+
+The correlation of steps and calories (cor. 0.814968) is slightly lower than the intensity and calories (cor. 0.8966161).
+
+However, the correlation of steps and intensity (cor. 0.895983) is almost the same at the intensity and calories (cor. 0.8966161).
+
+So from the graphs and numbers, I assume steps probably one of the indicators to the intensity of activity but less likely to cause more calories burned directly; while a higher intensity of activity is more likely to have more calories burned.
+
+```{r}
+cor.test(hourly_table$total_steps, hourly_table$calories)
+cor.test(hourly_table$total_intensity, hourly_table$calories)
+cor.test(hourly_table$total_steps, hourly_table$total_intensity)
+```
+
+
+#### Summary of the analysis
+
+**From the daily_table:-**
+
+1. Steps, Distance, Active time and Calories are positively correlated.
+
+2. Steps, Intensity and Calories are positvely correlated.
+
+3. Most people have less active time and less daily walk compared to the universal guidelines.
+
+<br>
+
+**From the hourly_table:-**
+
+4. Higher intensity of the activity can have more calories burned.
+
+5. General active time for most people is between 7am to 9pm.
+
+6. Highly active time start from 2pm to 5pm.
+
+<br>
+
+**To conclude the analysis:**
+
+More steps means longer the distance, more active time and higher intensity of the activity.
+
+The more active time and higher intensity can lead to more calories burned.
+
+Thus, daily walking can burn more calories and have other health benefits. Source here [link](https://www.medicalnewstoday.com/articles/325323#takeaway)
+
+<br>
+
+Most calories burned between 7am to 9pm, especially from 2pm to 5pm.
+
+<br>
+
+##### Marketing Strategy
+**Target Audience:**
+
+Women who want to have work life balance.
+
+**Key messages:** 
+
+Raise their awareness of their daily activities. 
+Encourage customers to wear *Bellabeat*'s product to achieve their healthy lifestyle goal. 
+
+<br>
+
+##### Recommendations on *Bellabeat*'s product:
+*Bellabeat*'s product: **Bellabeat app** and **Leaf**
+
+1. Do quality assurance on *Bellabeat*'s product for data recording.
+   
+   Avoid data discrepancy issue and improve data usability and accuracy.
+
+2. Notify them to have a daily brisk walk to improve their health.
+   
+   Motivate people to have more activity time.
+   
+3. Provide default activity time period suggestion from 2pm to 5pm.
+   
+   People can personalize the notification in different time period to fit their schedules.
+
+<br>
+
+#### Acknowledgement
+**Thank you** so much for the dataset from MÖBIUS [link](https://www.kaggle.com/datasets/arashnic/fitbit) and the demonstration from ANASTASIA CHEBOTINA! [link](https://www.kaggle.com/code/chebotinaa/bellabeat-case-study-with-r/notebook)
+
+<br>
+
+And **Thank you** for your interest to my *Bellabeat* Case Study!
+
+This is my first time using R.
+Feel free to give me any comments and recommendations for improvement!
+
+<br>
+<br>
+
+
