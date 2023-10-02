@@ -27,19 +27,21 @@ Check points in the analysis:-
 
 ## Solutions
 
-##### Marketing Strategy
-**Target Audience:**
+**Marketing Strategy**
+
+Target Audience:
 
 Women who want to have work life balance.
 
-**Key messages:** 
+Key messages:
 
 Raise their awareness of their daily activities. 
 Encourage customers to wear *Bellabeat*'s product to achieve their healthy lifestyle goal. 
 
 <br>
 
-##### Recommendations on *Bellabeat*'s product:
+**Recommendations on *Bellabeat*'s product**
+
 *Bellabeat*'s product: **Bellabeat app** and **Leaf**
 
 1. Do quality assurance on *Bellabeat*'s product for data recording.
