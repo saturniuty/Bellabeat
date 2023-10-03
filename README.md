@@ -5,7 +5,7 @@ Case Study with R
 
 ## Summary
 In this case study, I used FitBit Fitness Tracker Data to recognize human routine behavioral and pattern.
-I was able to generate ideas to the products and marketing strategy, in order to help the company identify growth opportunities.
+I was able to generate ideas to enhance *Bellabeat*'s product and influence the marketing strategy.
 
 <br>
 
@@ -22,6 +22,20 @@ Check points in the analysis:-
 4. Univariate analysis
 5. Bivariate analysis
 6. Trivariate analysis
+
+<br>
+
+
+## Conclusion
+More steps means longer the distance, more active time and higher intensity of the activity.
+
+The more active time and higher intensity can lead to more calories burned.
+
+Thus, daily walking can burn more calories and have other health benefits. Source here [link](https://www.medicalnewstoday.com/articles/325323#takeaway)
+
+<br>
+
+Most calories burned between 7am to 9pm, especially from 2pm to 5pm.
 
 <br>
 
@@ -58,13 +72,6 @@ Encourage customers to wear *Bellabeat*'s product to achieve their healthy lifes
 
 <br>
 
-## Conclusion
-After the analysis, I am able to answer the business questions with the observed trends and patterns.
-
-I also combined my findings with an outer source, for the stakeholders reference.
-
-<br>
-
 ## Acknowledgement
 **Thank you** so much for the dataset from MÖBIUS [link](https://www.kaggle.com/datasets/arashnic/fitbit) and the demonstration from ANASTASIA CHEBOTINA! [link](https://www.kaggle.com/code/chebotinaa/bellabeat-case-study-with-r/notebook)
 
@@ -73,5 +80,4 @@ I also combined my findings with an outer source, for the stakeholders reference
 And **Thank you** for your interest to my *Bellabeat* Case Study!
 
 This is my first time using R.
-
 Feel free to give me any comments and recommendations for improvement!
